@@ -56,8 +56,15 @@ class RedisConnectionHandler:
         **Returns:**
         - `Redis`: An instance of the Redis connection.
         """
-        self.__connection = Redis(host=self.__host, port=self.__port, db=self.__db)
-        return self.__connection
+        try:
+            print(
+                f"Connecting to Redis at {self.__host}:{self.__port}, DB: {self.__db}"
+            )
+            self.__connection = Redis(host=self.__host, port=self.__port, db=self.__db)
+            print("Connected to Redis")
+            return self.__connection
+        except Exception as e:
+            raise RedisConnectionError(f"Failed to connect to Redis: {e}") from e
 
     def get_connection(self) -> Redis:
         """

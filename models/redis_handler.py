@@ -30,7 +30,12 @@ class RedisHandler:
         - `key`: The key to set.
         - `value`: The value to associate with the key.
         """
-        self.__redis_conn.set(key, value)
+        try:
+            self.__redis_conn.set(key, value)
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to set key '{key}' with value '{value}': {e}"
+            ) from e
 
     def get_value(self, key: str) -> str | None:
         """
@@ -42,8 +47,11 @@ class RedisHandler:
         **Returns:**
         A string containing the value associated with the key, or `None` if the key does not exist.
         """
-        value = self.__redis_conn.get(key)
-        return value.decode("utf-8") if isinstance(value, bytes) else None
+        try:
+            value = self.__redis_conn.get(key)
+            return value.decode("utf-8") if isinstance(value, bytes) else None
+        except Exception as e:
+            raise RuntimeError(f"Failed to retrieve value for key '{key}': {e}") from e
 
     def delete_key(self, key: str) -> None:
         """
@@ -52,7 +60,10 @@ class RedisHandler:
         **Request Body:**
         - `key`: The key to delete.
         """
-        self.__redis_conn.delete(key)
+        try:
+            self.__redis_conn.delete(key)
+        except Exception as e:
+            raise RuntimeError(f"Failed to delete key '{key}': {e}") from e
 
     # Hash operations
     def set_hash(self, name: str, key: str, value: str) -> None:
@@ -64,7 +75,12 @@ class RedisHandler:
         - `key`: The field key within the hash.
         - `value`: The value to associate with the field key.
         """
-        self.__redis_conn.hset(name, key, value)
+        try:
+            self.__redis_conn.hset(name, key, value)
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to set hash '{name}' with key '{key}' and value '{value}': {e}"
+            ) from e
 
     def get_hash(self, name: str, key: str) -> str | None:
         """
@@ -78,5 +94,10 @@ class RedisHandler:
         A string containing the value associated with the field key, or `None`
         if the field does not exist.
         """
-        value = self.__redis_conn.hget(name, key)
-        return value.decode("utf-8") if isinstance(value, bytes) else None
+        try:
+            value = self.__redis_conn.hget(name, key)
+            return value.decode("utf-8") if isinstance(value, bytes) else None
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to retrieve hash '{name}' with key '{key}': {e}"
+            ) from e

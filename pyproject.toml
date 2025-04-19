@@ -14,6 +14,7 @@ dependencies = [
     "mypy (>=1.15.0,<2.0.0)",
     "isort (>=6.0.1,<7.0.0)",
 ]
+packages = [{ include = "src/redis_lib" }]
 
 
 [build-system]
@@ -23,3 +24,5 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^4.2.0"
 
+[tool.mypy]
+mypy_path = "src/"

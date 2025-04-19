@@ -1,6 +1,8 @@
 [MASTER]
 # Ignore paths that are not relevant to the project
 ignore=venv
+init-hook='import sys; sys.path.append("src/redis_lib")'
+
 
 [MESSAGES CONTROL]
 # Error messages to disable

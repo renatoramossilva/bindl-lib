@@ -2,8 +2,8 @@
 
 from typing import Any, Dict, Optional
 
-from models.connection.redis_connection import RedisConnectionHandler
-from models.redis_handler import RedisHandler
+from redis_lib.connection.redis_connection import RedisConnectionHandler
+from redis_lib.redis_handler import RedisHandler
 
 
 class _StartForm:

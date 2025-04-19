@@ -1,57 +1,76 @@
-# 🚀 Redis Playground
+# 📚 Redis Library
 
-Welcome to the **Redis Playground**! This guide will help you set up and explore Redis quickly and efficiently. 🎉
+Welcome to the **Redis Library**! This library provides utilities and tools to integrate Redis into your projects seamlessly. 🎉
 
-## 📥 Install Redis
-To install Redis on your system, run the following command:
-```bash
-brew install redis
+## 📂 Project Structure
+
+Here’s an overview of the project structure:
+
+```
+├── README.md
+├── poetry.lock
+├── pyproject.toml
+└── src
+    └── redis_lib
+        ├── __init__.py
+        ├── connection
+        │   ├── __init__.py
+        │   └── redis_connection.py
+        ├── redis_handler.py
+        ├── run.py
+        └── start_form
+            ├── __init__.py
+            └── start_form.py
 ```
 
-## 🖥️ Install Another Redis Desktop Manager
-For a graphical interface to manage Redis, install **Another Redis Desktop Manager**:
-```bash
-brew install --cask another-redis-desktop-manager
+This structure includes a new `session` module, which contains the `session_handler.py` file for managing Redis sessions.
+## 📥 Installation
+To include this library in your project using Poetry, add it as a dependency in your `pyproject.toml` file:
+```toml
+[tool.poetry.dependencies]
+redis-lib = { git = "https://github.com/renatoramossilva/redis-lib.git", rev = <release> }
 ```
 
-## 🐳 Run Redis with Docker
-Spin up a Redis container using Docker:
+Then, run the following command to install the dependency:
 ```bash
-docker run -d --name redis-container -p 6379:6379 -p 8001:8001 redis/redis-stack:latest
+poetry install
 ```
 
-## 🧪 Test Your Redis Setup
-Verify your Redis setup with the following Python code:
+## 🛠️ Usage
+Here’s a quick example of how to use the library in your Python project:
+
 ```python
-from redis import Redis
+from connection.redis_connection import RedisConnectionHandler
+from redis_handler import RedisHandler
 
-# Connect to Redis
-r = Redis("localhost", 6379, 0)
+redis_conn = RedisConnectionHandler().connect()
+redis_repo = RedisHandler(redis_conn)
 
 # Test the connection
-if r.ping():
-    print("🎉 Redis is running!")
+if redis_conn.ping():
+    print("🎉 Redis is connected!")
 else:
-    print("❌ Unable to connect to Redis.")
+    print("Unable to connect to Redis.")
 ```
 
-## 🌐 Access Redis GUI
-You can access the Redis GUI by navigating to the following URL in your browser:
-
-[http://localhost:8001/](http://localhost:8001/)
+## 🐳 Running Redis Locally
+If you need a local Redis instance for development, you can use Docker to spin up a container:
+```bash
+docker run -d --name redis-container -p 6379:6379 redis/redis-stack:latest
+```
 
 ## 🐋 Run Redis with Docker Compose
 Alternatively, you can use Docker Compose to set up Redis. Create a `docker-compose.yml` file with the following content:
 
 ```yaml
-version: '3.8'
 services:
-    redis:
-        image: redis/redis-stack:latest
-        container_name: redis-compose-container
-        ports:
-            - "6379:6379"
-            - "8001:8001"
+  redis:
+    container_name: redis-container
+    image: redis/redis-stack:latest
+    ports:
+      - "6379:6379"
+      - "8001:8001"   # RedisInsight (web)
+    restart: unless-stopped
 ```
 
 Then, start the Redis service with:
@@ -64,4 +83,4 @@ To stop the service, use:
 docker compose down
 ```
 
-Enjoy exploring Redis! 🚀
+Enjoy using the Redis Library! 🚀

@@ -1,0 +1,39 @@
+name: Run Linters on PR
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          export PATH="$HOME/.local/bin:$PATH"
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Run black
+        run: poetry run black .
+
+      - name: Run pylint
+        run: poetry run pylint **/*.py
+
+      - name: Run isort
+        run: poetry run isort .
+
+      - name: Run mypy
+        run: poetry run mypy .

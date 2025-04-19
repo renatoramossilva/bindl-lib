@@ -5,6 +5,10 @@ on:
     branches:
       - master
 
+permissions:
+  pull-requests: write
+  contents: read
+
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -37,3 +41,86 @@ jobs:
 
       - name: Run mypy
         run: poetry run mypy .
+
+      - name: Extract version from pyproject.toml
+        id: version
+        run: |
+          VERSION=$(grep '^version = ' pyproject.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "VERSION=$VERSION"
+
+      - name: Get PR labels
+        id: pr_labels
+        run: |
+          echo "LABELS=$(curl -s -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
+            https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels \
+            | jq -r '.[].name' | paste -sd "," -)" >> $GITHUB_ENV
+
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
+      - name: Check pyproject.toml & release label consistency
+        run: |
+          set -e
+
+          # Fetch the latest changes from the base branch
+          git fetch origin
+
+          # Check if pyproject.toml was modified using git log (no merge base needed)
+          CHANGED=$(git diff --name-only origin/master..HEAD | grep "pyproject.toml" || true)
+
+          # Get PR labels from GitHub API and check if 'release' is one of the labels
+          LABELS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels)
+
+          # Check if 'release' label is present
+          HAS_RELEASE=$(echo "$LABELS" | grep -i '"name": "release"' || true)
+
+          # Case 1: pyproject.toml was modified but no release label
+          if [ -n "$CHANGED" ] && [ -z "$HAS_RELEASE" ]; then
+            curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Content-Type: application/json" \
+              -X POST \
+              -d "{\"body\": \"❌ Check failed: \`pyproject.toml\` was modified, but the \`release\` label is missing. Please add the \`release\` label to proceed.\"}" \
+              "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments"
+            exit 1
+          fi
+
+          # Case 2: release label is set but pyproject.toml was not modified
+          if [ -z "$CHANGED" ] && [ -n "$HAS_RELEASE" ]; then
+            curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Content-Type: application/json" \
+              -X POST \
+              -d "{\"body\": \"❌ PR check failed: \`release\` label found, but \`pyproject.toml\` was not modified.\"}" \
+              "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments"
+            exit 1
+          fi
+
+      - name: Check if version already exists
+        if: contains(env.LABELS, 'release')
+        run: |
+          if git rev-parse "v$VERSION" >/dev/null 2>&1; then
+            curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Content-Type: application/json" \
+              -X POST \
+              -d "{\"body\": \"❌ PR check failed: version tag \`v$VERSION\` already exists. Please update the version in \`pyproject.toml\`.\"}" \
+              "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments"
+            exit 1
+          fi
+
+      - name: Check if new version is greater than latest release
+        if: contains(env.LABELS, 'release')
+        run: |
+          git fetch --tags
+          LATEST_TAG=$(git tag --sort=-v:refname | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1)
+          CLEAN_LATEST=$(echo "$LATEST_TAG" | sed 's/^v//')
+          echo "Latest: $CLEAN_LATEST | New: $VERSION"
+
+          if [ "$(printf '%s\n' "$CLEAN_LATEST" "$VERSION" | sort -V | head -n1)" = "$VERSION" ] && [ "$CLEAN_LATEST" != "$VERSION" ]; then
+            curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Content-Type: application/json" \
+              -X POST \
+              -d "{\"body\": \"❌ PR check failed: the new version \`$VERSION\` is not greater than the latest release \`$CLEAN_LATEST\`. Please update the version in \`pyproject.toml\`.\"}" \
+              "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments"
+            exit 1
+          fi

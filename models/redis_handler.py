@@ -1,5 +1,7 @@
 """A module for handling Redis database operations, including key-value and hash operations."""
 
+from typing import Optional
+
 
 class RedisHandler:
     """
@@ -22,16 +24,18 @@ class RedisHandler:
         self.__redis_conn = redis_conn
 
     # Direct key-value operations
-    def set_value(self, key: str, value: str) -> None:
+    def set_value(self, key: str, value: str, expiration: Optional[int] = None) -> None:
         """
         Set a key-value pair in the Redis database.
 
         **Request Body:**
         - `key`: The key to set.
         - `value`: The value to associate with the key.
+        - `expiration`: The expiration time in seconds (optional).
+        If not provided, the key will not expire.
         """
         try:
-            self.__redis_conn.set(key, value)
+            self.__redis_conn.set(key, value, ex=expiration)
         except Exception as e:
             raise RuntimeError(
                 f"Failed to set key '{key}' with value '{value}': {e}"
@@ -66,7 +70,9 @@ class RedisHandler:
             raise RuntimeError(f"Failed to delete key '{key}': {e}") from e
 
     # Hash operations
-    def set_hash(self, name: str, key: str, value: str) -> None:
+    def set_hash(
+        self, name: str, key: str, value: str, expiration: Optional[int] = None
+    ) -> None:
         """
         Set a field in a hash stored in the Redis database.
 
@@ -74,9 +80,13 @@ class RedisHandler:
         - `name`: The name of the hash.
         - `key`: The field key within the hash.
         - `value`: The value to associate with the field key.
+        - `expiration`: The expiration time in seconds (optional).
+        If not provided, the hash will not expire.
         """
         try:
             self.__redis_conn.hset(name, key, value)
+            if expiration:
+                self.__redis_conn.expire(name, expiration)
         except Exception as e:
             raise RuntimeError(
                 f"Failed to set hash '{name}' with key '{key}' and value '{value}': {e}"

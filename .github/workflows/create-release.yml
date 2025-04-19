@@ -8,7 +8,7 @@ on:
 
 permissions:
   contents: write
-  pull-requests: read
+  pull-requests: write
 
 jobs:
   create_release:
@@ -34,6 +34,47 @@ jobs:
         run: |
           VERSION=$(grep '^version = ' pyproject.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
           echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "VERSION=$VERSION"
+
+      - name: Fail if pyproject.toml was not changed
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.ref }}
+          CHANGED=$(git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD | grep "pyproject.toml" || true)
+          if [ -z "$CHANGED" ]; then
+            curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Content-Type: application/json" \
+              -X POST \
+              -d "{\"body\": \"❌ Release PR denied: the file \`pyproject.toml\` **was not modified**.\"}" \
+              "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments"
+            exit 1
+          fi
+
+      - name: Check if tag already exists
+        run: |
+          if git rev-parse "v$VERSION" >/dev/null 2>&1; then
+            curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Content-Type: application/json" \
+              -X POST \
+              -d "{\"body\": \"❌ Release PR denied: the tag \`v$VERSION\` **already exists**. Please update the version in \`pyproject.toml\`.\"}" \
+              "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments"
+            exit 1
+          fi
+
+      - name: Check that new version is greater than the latest release
+        run: |
+          git fetch --tags
+          LATEST_TAG=$(git tag --sort=-v:refname | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1)
+          CLEAN_LATEST=$(echo "$LATEST_TAG" | sed 's/^v//')
+          echo "Latest tag: $CLEAN_LATEST"
+          echo "Current version: $VERSION"
+          if [ "$(printf '%s\n' "$CLEAN_LATEST" "$VERSION" | sort -V | head -n1)" = "$VERSION" ] && [ "$CLEAN_LATEST" != "$VERSION" ]; then
+            curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Content-Type: application/json" \
+              -X POST \
+              -d "{\"body\": \"❌ Release PR denied: the new version \`$VERSION\` is **less than or equal to** the latest version \`$CLEAN_LATEST\`. Please update the version in \`pyproject.toml\`.\"}" \
+              "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments"
+            exit 1
+          fi
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1

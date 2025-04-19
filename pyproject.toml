@@ -1,6 +1,6 @@
 [project]
 name = "redis-lib"
-version = "2.1.4"
+version = "2.1.5"
 description = ""
 authors = [
     {name = "Renato Ramos",email = "renatoramossilva@gmail.com"}

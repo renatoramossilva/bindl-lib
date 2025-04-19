@@ -32,7 +32,7 @@ jobs:
       - name: Read version from pyproject.toml
         id: get_version
         run: |
-          VERSION=$(python -c "import toml; print(toml.load('pyproject.toml')['tool']['poetry']['version'])")
+          VERSION=$(grep '^version = ' pyproject.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Create GitHub Release

@@ -24,7 +24,7 @@ class RedisConnectionError(Exception):
     """Custom exception for Redis connection errors."""
 
 
-class RedisConnectionHandler:
+class RedisConnectionHandler(Redis):
     """
     Handles Redis database connections and provides methods to connect and retrieve the connection.
     """
@@ -44,6 +44,11 @@ class RedisConnectionHandler:
         - `get_connection()`: Retrieve the active Redis connection. Raises an exception
         if the connection is not established.
         """
+        super().__init__(
+            host=REDIS_CONNECTION_CONFIG["HOST"],
+            port=REDIS_CONNECTION_CONFIG["PORT"],
+            db=REDIS_CONNECTION_CONFIG["DB"],
+        )
         self.__host: str = REDIS_CONNECTION_CONFIG["HOST"]
         self.__port: int = REDIS_CONNECTION_CONFIG["PORT"]
         self.__db: int = REDIS_CONNECTION_CONFIG["DB"]

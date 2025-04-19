@@ -1,0 +1,9 @@
+[MASTER]
+# Ignore paths that are not relevant to the project
+ignore=venv
+
+[MESSAGES CONTROL]
+# Error messages to disable
+disable=
+    too-many-ancestors,
+    abstract-method

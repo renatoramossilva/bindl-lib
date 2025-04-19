@@ -2,9 +2,13 @@ name: Create Release on PR Merge with "release" label
 
 on:
   pull_request:
-    types: [merged]
+    types: [closed]
     branches:
       - master
+
+permissions:
+  contents: write
+  pull-requests: read
 
 jobs:
   create_release:

@@ -2,8 +2,8 @@
 
 from typing import Any, Dict, Optional
 
-from redis_lib.connection.redis_connection import RedisConnectionHandler
-from redis_lib.redis_handler import RedisHandler
+from bindl.redis_wrapper import redis_handler
+from bindl.redis_wrapper.connection import redis_connection
 
 
 class _StartForm:
@@ -20,8 +20,8 @@ class _StartForm:
         """
         self.__cache_date: dict[str, Any] = {}
 
-        redis_conn = RedisConnectionHandler().connect()
-        redis_repo = RedisHandler(redis_conn)
+        redis_conn = redis_connection.RedisConnectionHandler().connect()
+        redis_repo = redis_handler.RedisHandler(redis_conn)
         keys = redis_conn.keys("*")
 
         for key in keys:  # type: ignore

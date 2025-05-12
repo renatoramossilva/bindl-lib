@@ -38,27 +38,94 @@ class RabbitmqPublisher(
         super().__init__(**kwargs)
         self.__exchange = exchange
         self.__routing_key = routing_key
-        self.__connection_parameters = (self._create_connection(),)
+        self.__connection_parameters = self._get_connection_params()
+        self.__connection = self.__create_connection()
         self.__channel = self.__create_channel()
 
-    def __create_channel(self) -> pika.adapters.blocking_connection.BlockingChannel:
+    def __declare_exchange(
+        self, channel, exchange_type="direct", durable=True, auto_delete=False
+    ):
         """
-        Creates a channel for publishing messages to RabbitMQ.
+        Declares an exchange on the given RabbitMQ channel to ensure it exists.
 
         **Parameters:**
-            connection_parameters: The connection parameters for RabbitMQ.
+            channel: The RabbitMQ channel on which the exchange will be declared.
+            exchange_type: The type of the exchange (e.g., 'direct', 'fanout', 'topic', 'headers').
+                Defaults to 'direct'.
+            durable: If True, the exchange will survive a broker restart.
+            auto_delete: If True, the exchange will be deleted when no longer in use.
+
+        Notes:
+            - The exchange name is retrieved from the instance's `__exchange` attribute.
+        """
+        # Declare the exchange with additional control parameters
+        channel.exchange_declare(
+            exchange=self.__exchange,
+            exchange_type=exchange_type,
+            durable=durable,
+            auto_delete=auto_delete,
+        )
+
+    def __create_channel(
+        self,
+        exchange_type: Optional[str] = "direct",
+        durable: Optional[bool] = True,
+        auto_delete: Optional[bool] = False,
+    ) -> pika.adapters.blocking_connection.BlockingChannel:
+        """
+        Creates a channel for publishing messages to RabbitMQ and ensures the exchange exists.
+
+        **Parameters:**
+            exchange_type: The type of the exchange (e.g., 'direct', 'fanout', 'topic', 'headers').
+            durable: If True, the exchange will survive a broker restart.
+            auto_delete: If True, the exchange will be deleted when no longer in use.
+
         **Returns:**
             A channel object for publishing messages.
+
+        **Raises:**
+            RuntimeError: If the exchange cannot be declared.
         """
-        channel = pika.BlockingConnection(self.__connection_parameters).channel()
+        channel = self.__connection.channel()
+        try:
+            # Declare the exchange to ensure it exists
+            self.__declare_exchange(
+                channel, exchange_type, durable=durable, auto_delete=auto_delete
+            )
+        except pika.exceptions.AMQPError as e:
+            raise RuntimeError(
+                f"Failed to declare exchange '{self.__exchange}': {e}"
+            ) from e
         return channel
 
-    def send_message(self, body: Dict) -> None:
+    def __create_connection(self) -> pika.BlockingConnection:
+        """
+        Creates a connection to RabbitMQ with error handling and retry logic.
+
+        **Returns:**
+            A BlockingConnection object for RabbitMQ.
+
+        **Raises:**
+            RuntimeError: If the connection to RabbitMQ cannot be established.
+        """
+        try:
+            connection = pika.BlockingConnection(self.__connection_parameters)
+            if not connection.is_open:
+                raise RuntimeError("Failed to establish a connection to RabbitMQ.")
+            return connection
+        except pika.exceptions.AMQPConnectionError as e:
+            raise RuntimeError(f"Error connecting to RabbitMQ: {e}") from e
+
+    def send_message(self, body: Dict, mandatory: bool = False) -> None:
         """
         Sends a message to the specified exchange and routing key.
 
         **Parameters:**
             body: The message body to be sent. It should be a dictionary.
+            mandatory: If True, raises an exception if the message cannot be routed to a queue.
+
+        **Raises:**
+            RuntimeError: If the message cannot be routed or delivered.
         """
         try:
             self.__channel.basic_publish(

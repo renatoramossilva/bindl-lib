@@ -26,7 +26,7 @@ class RabbitMQBase:  # pylint: disable=too-few-public-methods
         self.__username = kwargs.get("username") or os.getenv("RABBITMQ_USER")
         self.__password = kwargs.get("password") or os.getenv("RABBITMQ_PASS")
 
-    def _create_connection(self) -> pika.BlockingConnection:
+    def _get_connection_params(self) -> pika.BlockingConnection:
         connection_parameters = pika.ConnectionParameters(
             host=self.__host,
             port=self.__port,

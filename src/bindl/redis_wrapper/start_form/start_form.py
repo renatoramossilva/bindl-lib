@@ -2,8 +2,9 @@
 
 from typing import Any, Dict, Optional
 
-from bindl.redis_wrapper import redis_handler
-from bindl.redis_wrapper.connection import redis_connection
+from bindl.redis_wrapper import redis_handler  # pylint: disable=import-error
+from bindl.redis_wrapper.connection import \
+    redis_connection  # pylint: disable=import-error
 
 
 class _StartForm:

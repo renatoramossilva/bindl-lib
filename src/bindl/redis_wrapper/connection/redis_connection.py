@@ -29,7 +29,12 @@ class RedisConnectionHandler(Redis):
     Handles Redis database connections and provides methods to connect and retrieve the connection.
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        host: Optional[str] = None,
+        port: Optional[int] = None,
+        db: Optional[int] = None,
+    ) -> None:
         """
         Handle Redis database connections.
 
@@ -45,13 +50,13 @@ class RedisConnectionHandler(Redis):
         if the connection is not established.
         """
         super().__init__(
-            host=REDIS_CONNECTION_CONFIG["HOST"],
-            port=REDIS_CONNECTION_CONFIG["PORT"],
-            db=REDIS_CONNECTION_CONFIG["DB"],
+            host=host or REDIS_CONNECTION_CONFIG["HOST"],
+            port=port or REDIS_CONNECTION_CONFIG["PORT"],
+            db=db or REDIS_CONNECTION_CONFIG["DB"],
         )
-        self.__host: str = REDIS_CONNECTION_CONFIG["HOST"]
-        self.__port: int = REDIS_CONNECTION_CONFIG["PORT"]
-        self.__db: int = REDIS_CONNECTION_CONFIG["DB"]
+        self.__host: str = host or REDIS_CONNECTION_CONFIG["HOST"]
+        self.__port: int = port or REDIS_CONNECTION_CONFIG["PORT"]
+        self.__db: int = db or REDIS_CONNECTION_CONFIG["DB"]
         self.__connection: Optional[Redis] = None
 
     def connect(self) -> Redis:

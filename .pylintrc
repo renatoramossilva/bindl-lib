@@ -1,11 +1,13 @@
 [MASTER]
 # Ignore paths that are not relevant to the project
 ignore=venv
-init-hook='import sys; sys.path.append("src/redis_lib")'
+#init-hook='import sys; sys.path.append("src/redis_lib")'
+init-hook='import sys; sys.path.insert(0, "src")'
 
 
 [MESSAGES CONTROL]
 # Error messages to disable
 disable=
     too-many-ancestors,
-    abstract-method
+    abstract-method,
+    missing-class-docstring

@@ -3,8 +3,16 @@
 from typing import Optional, TypedDict
 
 from redis import Redis
+import bindl.logger
+
+LOG = bindl.logger.setup_logger(__name__)
 
 
+# Default Redis connection configuration
+# These values can be overridden by environment variables or during instantiation
+# to allow flexibility in different environments (e.g., development, testing, production).
+# The default values are set to connect to a Redis server running on localhost at port 6379,
+# using the default database (0).
 class RedisConnectionConfig(TypedDict):
     """Configuration for Redis connection."""
 
@@ -67,11 +75,14 @@ class RedisConnectionHandler(Redis):
         - `Redis`: An instance of the Redis connection.
         """
         try:
-            print(
-                f"Connecting to Redis at {self.__host}:{self.__port}, DB: {self.__db}"
+            LOG.info(
+                "Connecting to Redis at %s:%d, DB: %d",
+                self.__host,
+                self.__port,
+                self.__db,
             )
             self.__connection = Redis(host=self.__host, port=self.__port, db=self.__db)
-            print("Connected to Redis")
+            LOG.info("Connected to Redis")
             return self.__connection
         except Exception as e:
             raise RedisConnectionError(f"Failed to connect to Redis: {e}") from e

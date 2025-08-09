@@ -58,8 +58,9 @@ def setup_logger(name: str) -> logging.Logger:
     # Create handle
     console_handler = logging.StreamHandler()
 
-    # Set message format
-    formatter = ColoredFormatter("%(levelname)s:%(name)s: %(message)s")
+    formatter = ColoredFormatter(
+        "%(asctime)s [%(levelname)s] %(name)s: %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
+    )
 
     # Apply formatter to handle
     console_handler.setFormatter(formatter)

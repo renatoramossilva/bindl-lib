@@ -1,6 +1,6 @@
 """A module for handling Redis database operations, including key-value and hash operations."""
 
-from typing import Optional
+from typing import Any, Optional
 
 
 class RedisHandler:
@@ -24,7 +24,7 @@ class RedisHandler:
         self.__redis_conn = redis_conn
 
     # Direct key-value operations
-    def set_value(self, key: str, value: str, expiration: Optional[int] = None) -> None:
+    def set_value(self, key: str, value: Any, expiration: Optional[int] = None) -> None:
         """
         Set a key-value pair in the Redis database.
 
